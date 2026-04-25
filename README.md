@@ -244,6 +244,26 @@ JWT_SECRET=your_super_secret_key_here
 - Three-column layout: Sidebar navigation | Main feed | Right panel (search & suggestions)
 - Responsive down to mobile with collapsible sidebar
 
+### Screenshots
+
+**Home Feed**
+![Home Feed](screenshots/homepage.png)
+
+**User Profile**
+![Profile](screenshots/profile.png)
+
+**Edit Profile**
+![Edit Profile](screenshots/edit-profile.png)
+
+**Notifications**
+![Notifications](screenshots/notification.png)
+
+**Login & Register**
+<p float="left">
+  <img src="screenshots/login.png" width="49%" />
+  <img src="screenshots/register.png" width="49%" />
+</p>
+
 ---
 
 ## 📄 License
