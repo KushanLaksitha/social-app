@@ -95,7 +95,12 @@ export default function PostCard({ post: initialPost, onDelete, showThread = fal
               <span className="display-name" onClick={e => goToProfile(e, post.author?.username)}>{post.author?.display_name}</span>
               <span className="username-tag">@{post.author?.username}</span>
             </div>
-            <span className="post-time">{timeAgo}</span>
+            <span className="post-time" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span title={`Visible to: ${post.visibility || 'public'}`} style={{ fontSize: 11 }}>
+                {post.visibility === 'onlyme' ? '🔒' : post.visibility === 'followers' ? '👥' : '🌐'}
+              </span>
+              {timeAgo}
+            </span>
             {user?.id === post.user_id && (
               <button onClick={handleDelete} style={{ color: 'var(--red)', fontSize: 14, padding: '4px 8px', borderRadius: 6, marginLeft: 4 }}>🗑</button>
             )}

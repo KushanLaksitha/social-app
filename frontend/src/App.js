@@ -95,8 +95,31 @@ export default function App() {
         e.preventDefault();
       }
     };
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'PrintScreen') {
+        document.body.classList.add('blurred-screen');
+        setTimeout(() => document.body.classList.remove('blurred-screen'), 1000);
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+      }
+    };
+
+    const handleBlur = () => document.body.classList.add('blurred-screen');
+    const handleFocus = () => document.body.classList.remove('blurred-screen');
+
     document.addEventListener('contextmenu', handleContext);
-    return () => document.removeEventListener('contextmenu', handleContext);
+    document.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('blur', handleBlur);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('contextmenu', handleContext);
+      document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   return (

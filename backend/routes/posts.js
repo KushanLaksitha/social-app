@@ -31,7 +31,7 @@ router.get('/feed', auth, (req, res) => {
     SELECT p.* FROM posts p
     WHERE p.is_reply = 0 AND (
       p.user_id = ? OR
-      p.user_id IN (SELECT following_id FROM follows WHERE follower_id = ?)
+      (p.user_id IN (SELECT following_id FROM follows WHERE follower_id = ?) AND p.visibility != 'onlyme')
     )
     ${cursor ? 'AND p.created_at < ?' : ''}
     ORDER BY p.created_at DESC LIMIT ?
@@ -45,7 +45,7 @@ router.get('/feed', auth, (req, res) => {
 router.get('/explore', optionalAuth, (req, res) => {
   const { cursor, limit = 20 } = req.query;
   const userId = req.user?.id;
-  let query = `SELECT * FROM posts WHERE is_reply=0 ${cursor ? 'AND created_at < ?' : ''} ORDER BY likes_count DESC, created_at DESC LIMIT ?`;
+  let query = `SELECT * FROM posts WHERE is_reply=0 AND visibility='public' ${cursor ? 'AND created_at < ?' : ''} ORDER BY likes_count DESC, created_at DESC LIMIT ?`;
   const params = cursor ? [cursor, parseInt(limit)] : [parseInt(limit)];
   const posts = db.prepare(query).all(...params).map(p => enrichPost(p, userId));
   res.json(posts);
@@ -62,7 +62,7 @@ router.post('/', auth, (req, res, next) => {
   upload.single('media')(req, res, (uploadErr) => {
     if (uploadErr) return res.status(400).json({ error: 'File upload failed' });
     
-    const { content, parent_id } = req.body;
+    const { content, parent_id, visibility = 'public' } = req.body;
     if (!content?.trim() && !req.file) return res.status(400).json({ error: 'Content or media required' });
 
     let image = null;
@@ -90,8 +90,8 @@ router.post('/', auth, (req, res, next) => {
 
     const id = uuidv4();
     const is_reply = parent_id ? 1 : 0;
-    db.prepare('INSERT INTO posts (id, user_id, content, image, video, parent_id, is_reply) VALUES (?,?,?,?,?,?,?)')
-      .run(id, req.user.id, (content || '').trim(), image, video, parent_id || null, is_reply);
+    db.prepare('INSERT INTO posts (id, user_id, content, image, video, parent_id, is_reply, visibility) VALUES (?,?,?,?,?,?,?,?)')
+      .run(id, req.user.id, (content || '').trim(), image, video, parent_id || null, is_reply, visibility);
     
     db.prepare('UPDATE users SET posts_count = posts_count+1 WHERE id=?').run(req.user.id);
 
@@ -112,6 +112,16 @@ router.post('/', auth, (req, res, next) => {
 router.get('/:id', optionalAuth, (req, res) => {
   const post = db.prepare('SELECT * FROM posts WHERE id=?').get(req.params.id);
   if (!post) return res.status(404).json({ error: 'Post not found' });
+  
+  if (post.user_id !== req.user?.id) {
+    if (post.visibility === 'onlyme') return res.status(403).json({ error: 'Private post' });
+    if (post.visibility === 'followers') {
+      if (!req.user) return res.status(403).json({ error: 'Followers only' });
+      const follow = db.prepare('SELECT 1 FROM follows WHERE follower_id=? AND following_id=?').get(req.user.id, post.user_id);
+      if (!follow) return res.status(403).json({ error: 'Followers only' });
+    }
+  }
+
   res.json(enrichPost(post, req.user?.id));
 });
 
@@ -171,7 +181,20 @@ router.delete('/:id', auth, (req, res) => {
 
 // User posts
 router.get('/user/:userId', optionalAuth, (req, res) => {
-  const posts = db.prepare('SELECT * FROM posts WHERE user_id=? AND is_reply=0 ORDER BY created_at DESC LIMIT 50').all(req.params.userId);
+  const isMe = req.user?.id === req.params.userId;
+  let isFollowing = false;
+  if (!isMe && req.user) {
+    isFollowing = !!db.prepare('SELECT 1 FROM follows WHERE follower_id=? AND following_id=?').get(req.user.id, req.params.userId);
+  }
+
+  let query = 'SELECT * FROM posts WHERE user_id=? AND is_reply=0 ';
+  if (!isMe) {
+    if (isFollowing) query += "AND visibility != 'onlyme' ";
+    else query += "AND visibility = 'public' ";
+  }
+  query += 'ORDER BY created_at DESC LIMIT 50';
+
+  const posts = db.prepare(query).all(req.params.userId);
   res.json(posts.map(p => enrichPost(p, req.user?.id)));
 });
 

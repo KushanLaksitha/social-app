@@ -48,6 +48,7 @@ db.exec(`
     repost_of TEXT DEFAULT NULL,
     parent_id TEXT DEFAULT NULL,
     is_reply INTEGER DEFAULT 0,
+    visibility TEXT DEFAULT 'public',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (repost_of) REFERENCES posts(id) ON DELETE SET NULL,
@@ -115,6 +116,13 @@ db.exec(`
     FOREIGN KEY (actor_id) REFERENCES users(id) ON DELETE CASCADE
   );
 `);
+
+// Add visibility column to existing posts table if it doesn't exist
+try {
+  db.exec(`ALTER TABLE posts ADD COLUMN visibility TEXT DEFAULT 'public';`);
+} catch (e) {
+  // Column already exists, ignore
+}
 
 // Wrap DatabaseSync to match better-sqlite3 API style
 const wrap = {

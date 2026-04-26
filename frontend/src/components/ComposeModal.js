@@ -10,6 +10,7 @@ export default function ComposeModal({ onClose, onPosted, replyTo = null }) {
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [visibility, setVisibility] = useState('public');
   const textRef = useRef();
   const fileRef = useRef();
 
@@ -39,6 +40,7 @@ export default function ComposeModal({ onClose, onPosted, replyTo = null }) {
       formData.append('content', content.trim());
       if (replyTo) formData.append('parent_id', replyTo.id);
       if (media) formData.append('media', media);
+      formData.append('visibility', visibility);
 
       const res = await api.post('/posts', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -111,6 +113,38 @@ export default function ComposeModal({ onClose, onPosted, replyTo = null }) {
                   onChange={handleMediaChange}
                 />
               </div>
+
+              {/* ── Visibility Selector ── */}
+              {!replyTo && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.7px' }}>Who can see this?</span>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {[
+                      { value: 'public',    label: 'Public',    emoji: '🌐' },
+                      { value: 'followers', label: 'Followers', emoji: '👥' },
+                      { value: 'onlyme',   label: 'Only Me',  emoji: '🔒' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setVisibility(opt.value)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 5,
+                          padding: '6px 12px',
+                          borderRadius: 20,
+                          border: `1px solid ${visibility === opt.value ? 'var(--accent2)' : 'var(--border)'}`,
+                          background: visibility === opt.value ? 'var(--accent)' : 'transparent',
+                          color: visibility === opt.value ? '#fff' : 'var(--text3)',
+                          fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        <span>{opt.emoji}</span>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
