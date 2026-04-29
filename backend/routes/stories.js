@@ -7,6 +7,15 @@ const { saveEncrypted } = require('../utils/encryption');
 
 const router = express.Router();
 
+const enrichStory = (story, userId) => {
+  if (!story) return null;
+  let liked = false;
+  if (userId) {
+    liked = !!db.prepare('SELECT 1 FROM story_likes WHERE story_id=? AND user_id=?').get(story.id, userId);
+  }
+  return { ...story, liked };
+};
+
 router.post('/', auth, (req, res) => {
   const upload = req.app.get('upload');
   upload.single('media')(req, res, (uploadErr) => {
@@ -63,11 +72,58 @@ router.get('/feed', auth, (req, res) => {
         stories: []
       };
     }
-    acc[s.user_id].stories.push(s);
+    acc[s.user_id].stories.push(enrichStory(s, req.user.id));
     return acc;
   }, {});
 
   res.json(Object.values(grouped));
+});
+
+router.post('/:id/view', auth, (req, res) => {
+  const existing = db.prepare('SELECT 1 FROM story_views WHERE story_id=? AND user_id=?').get(req.params.id, req.user.id);
+  if (!existing) {
+    db.prepare('INSERT INTO story_views (story_id, user_id) VALUES (?,?)').run(req.params.id, req.user.id);
+    db.prepare('UPDATE stories SET views_count = views_count + 1 WHERE id=?').run(req.params.id);
+    return res.json({ viewed: true });
+  }
+  res.json({ viewed: false });
+});
+
+router.post('/:id/like', auth, (req, res) => {
+  const existing = db.prepare('SELECT 1 FROM story_likes WHERE story_id=? AND user_id=?').get(req.params.id, req.user.id);
+  if (existing) {
+    db.prepare('DELETE FROM story_likes WHERE story_id=? AND user_id=?').run(req.params.id, req.user.id);
+    db.prepare('UPDATE stories SET likes_count = MAX(0, likes_count - 1) WHERE id=?').run(req.params.id);
+    return res.json({ liked: false });
+  }
+  db.prepare('INSERT INTO story_likes (story_id, user_id) VALUES (?,?)').run(req.params.id, req.user.id);
+  db.prepare('UPDATE stories SET likes_count = likes_count + 1 WHERE id=?').run(req.params.id);
+  res.json({ liked: true });
+});
+
+router.post('/:id/reply', auth, (req, res) => {
+  const story = db.prepare('SELECT * FROM stories WHERE id=?').get(req.params.id);
+  if (!story) return res.status(404).json({ error: 'Story not found' });
+  if (story.user_id === req.user.id) return res.status(400).json({ error: "Can't reply to yourself" });
+
+  const { content } = req.body;
+  if (!content?.trim()) return res.status(400).json({ error: 'Reply required' });
+
+  // Find or create conversation
+  const [a, b] = [req.user.id, story.user_id].sort();
+  let conv = db.prepare('SELECT id FROM conversations WHERE (user1_id=? AND user2_id=?) OR (user1_id=? AND user2_id=?)').get(a, b, b, a);
+  if (!conv) {
+    const cid = uuidv4();
+    db.prepare('INSERT INTO conversations (id, user1_id, user2_id) VALUES (?,?,?)').run(cid, a, b);
+    conv = { id: cid };
+  }
+
+  const mid = uuidv4();
+  const replyContent = `Replied to your story: ${content.trim()}`;
+  db.prepare('INSERT INTO messages (id, conversation_id, sender_id, content) VALUES (?,?,?,?)').run(mid, conv.id, req.user.id, replyContent);
+  db.prepare('UPDATE conversations SET last_message=?, last_message_at=CURRENT_TIMESTAMP WHERE id=?').run(replyContent.substring(0, 100), conv.id);
+
+  res.json({ success: true });
 });
 
 router.get('/user/:userId', auth, (req, res) => {
@@ -85,7 +141,7 @@ router.get('/user/:userId', auth, (req, res) => {
   }
 
   const stories = db.prepare('SELECT * FROM stories WHERE user_id=? ORDER BY created_at DESC').all(req.params.userId);
-  res.json(stories);
+  res.json(stories.map(s => enrichStory(s, req.user.id)));
 });
 
 router.delete('/:id', auth, (req, res) => {

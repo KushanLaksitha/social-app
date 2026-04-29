@@ -131,8 +131,28 @@ db.exec(`
     media_url TEXT NOT NULL,
     media_type TEXT NOT NULL,
     duration INTEGER DEFAULT 0,
+    views_count INTEGER DEFAULT 0,
+    likes_count INTEGER DEFAULT 0,
     expires_at DATETIME NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS story_views (
+    story_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (story_id, user_id),
+    FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS story_likes (
+    story_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (story_id, user_id),
+    FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
 

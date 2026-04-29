@@ -7,8 +7,45 @@ export default function StoryViewer({ groupedStories, initialUserIndex, onClose 
   const { user } = useAuth();
   const [userIndex, setUserIndex] = useState(initialUserIndex);
   const [storyIndex, setStoryIndex] = useState(0);
+  const [reply, setReply] = useState('');
+  const [sending, setSending] = useState(false);
+  
   const currentUser = groupedStories[userIndex];
   const currentStory = currentUser.stories[storyIndex];
+
+  useEffect(() => {
+    // Record view
+    if (currentStory) {
+      api.post(`/stories/${currentStory.id}/view`).catch(() => {});
+    }
+  }, [currentStory]);
+
+  const handleLike = async (e) => {
+    e.stopPropagation();
+    try {
+      const res = await api.post(`/stories/${currentStory.id}/like`);
+      currentStory.liked = res.data.liked;
+      currentStory.likes_count = res.data.liked ? (currentStory.likes_count || 0) + 1 : (currentStory.likes_count || 0) - 1;
+      // Trigger re-render (hacky for this local state)
+      setStoryIndex(storyIndex);
+    } catch (e) {
+      alert('Failed to like story');
+    }
+  };
+
+  const handleReply = async (e) => {
+    e.preventDefault();
+    if (!reply.trim()) return;
+    setSending(true);
+    try {
+      await api.post(`/stories/${currentStory.id}/reply`, { content: reply });
+      setReply('');
+      alert('Reply sent!');
+    } catch (e) {
+      alert('Failed to send reply');
+    }
+    setSending(false);
+  };
 
   const handleDelete = async () => {
     if (window.confirm('Delete this story?')) {
@@ -90,6 +127,30 @@ export default function StoryViewer({ groupedStories, initialUserIndex, onClose 
         <div className="story-nav">
           <div className="nav-area left" onClick={handlePrev} />
           <div className="nav-area right" onClick={handleNext} />
+        </div>
+
+        {/* Footer actions */}
+        <div className="story-footer" onClick={e => e.stopPropagation()}>
+          <div className="story-stats">
+            <div className="story-stat">
+              <span style={{ fontSize: 18 }}>👁️</span> {currentStory.views_count || 0}
+            </div>
+            <button className={`story-stat ${currentStory.liked ? 'liked' : ''}`} onClick={handleLike}>
+              <span style={{ fontSize: 18 }}>{currentStory.liked ? '❤️' : '🤍'}</span> {currentStory.likes_count || 0}
+            </button>
+          </div>
+          
+          {user?.id !== currentUser.user_id && (
+            <form className="story-reply-form" onSubmit={handleReply}>
+              <input 
+                placeholder="Reply to story..." 
+                value={reply} 
+                onChange={e => setReply(e.target.value)}
+                disabled={sending}
+              />
+              <button type="submit" disabled={sending || !reply.trim()}>Send</button>
+            </form>
+          )}
         </div>
       </div>
     </div>

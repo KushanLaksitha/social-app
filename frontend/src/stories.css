@@ -170,3 +170,70 @@
 .highlight-item {
   flex-shrink: 0;
 }
+
+.story-footer {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.story-stats {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.story-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+
+.story-stat.liked {
+  color: var(--pink);
+}
+
+.story-reply-form {
+  display: flex;
+  gap: 10px;
+}
+
+.story-reply-form input {
+  flex: 1;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 100px;
+  padding: 10px 16px;
+  color: white;
+  font-size: 14px;
+  outline: none;
+  backdrop-filter: blur(8px);
+}
+
+.story-reply-form input:focus {
+  border-color: rgba(255,255,255,0.5);
+}
+
+.story-reply-form button {
+  background: white;
+  color: black;
+  font-weight: 700;
+  padding: 0 16px;
+  border-radius: 100px;
+  font-size: 13px;
+  transition: all 0.15s;
+}
+
+.story-reply-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
