@@ -324,6 +324,18 @@ function HighlightsSection({ userId, isMe }) {
     }
   };
 
+  const handleDeleteHighlight = async (e, id) => {
+    e.stopPropagation();
+    if (window.confirm('Delete this highlight?')) {
+      try {
+        await api.delete(`/highlights/${id}`);
+        setHighlights(prev => prev.filter(h => h.id !== id));
+      } catch (e) {
+        alert('Failed to delete highlight');
+      }
+    }
+  };
+
   return (
     <div className="highlights-container" style={{ padding: '0 20px', marginBottom: 20, display: 'flex', gap: 16, overflowX: 'auto', scrollbarWidth: 'none' }}>
       {isMe && (
@@ -333,11 +345,19 @@ function HighlightsSection({ userId, isMe }) {
         </div>
       )}
       {highlights.map(h => (
-        <div key={h.id} className="highlight-item" onClick={() => setActiveHighlight(h)} style={{ textAlign: 'center', cursor: 'pointer' }}>
+        <div key={h.id} className="highlight-item" onClick={() => setActiveHighlight(h)} style={{ textAlign: 'center', cursor: 'pointer', position: 'relative' }}>
           <div style={{ width: 64, height: 64, borderRadius: '50%', border: '2px solid var(--border)', overflow: 'hidden', padding: 2 }}>
             <img src={h.cover_url || '/placeholder-avatar.png'} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
           </div>
           <div style={{ fontSize: 12, marginTop: 4, maxWidth: 64, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.title}</div>
+          {isMe && (
+            <button 
+              onClick={(e) => handleDeleteHighlight(e, h.id)} 
+              style={{ position: 'absolute', top: -5, right: -5, background: 'var(--red)', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              ✕
+            </button>
+          )}
         </div>
       ))}
 

@@ -41,9 +41,12 @@ router.get('/:username', optionalAuth, (req, res) => {
   }
   res.json({ ...user, isFollowing, isBlocked });
 });
-
 router.post('/:id/follow', auth, (req, res) => {
   if (req.params.id === req.user.id) return res.status(400).json({ error: "Can't follow yourself" });
+
+  const isBlockedByMe = db.prepare('SELECT 1 FROM blocks WHERE blocker_id=? AND blocked_id=?').get(req.user.id, req.params.id);
+  const amIBlocked = db.prepare('SELECT 1 FROM blocks WHERE blocker_id=? AND blocked_id=?').get(req.params.id, req.user.id);
+  if (isBlockedByMe || amIBlocked) return res.status(403).json({ error: "Cannot follow while blocked" });
 
   const existing = db.prepare('SELECT 1 FROM follows WHERE follower_id=? AND following_id=?').get(req.user.id, req.params.id);
   if (existing) {

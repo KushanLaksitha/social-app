@@ -1,11 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Avatar } from './PostCard';
+import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
 
 export default function StoryViewer({ groupedStories, initialUserIndex, onClose }) {
+  const { user } = useAuth();
   const [userIndex, setUserIndex] = useState(initialUserIndex);
   const [storyIndex, setStoryIndex] = useState(0);
   const currentUser = groupedStories[userIndex];
   const currentStory = currentUser.stories[storyIndex];
+
+  const handleDelete = async () => {
+    if (window.confirm('Delete this story?')) {
+      try {
+        await api.delete(`/stories/${currentStory.id}`);
+        // For simplicity, just close the viewer and let parent refresh
+        onClose();
+      } catch (e) {
+        alert('Failed to delete story');
+      }
+    }
+  };
 
   useEffect(() => {
     let timer;
@@ -55,6 +70,9 @@ export default function StoryViewer({ groupedStories, initialUserIndex, onClose 
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 600 }}>{currentUser.display_name}</div>
           </div>
+          {user?.id === currentUser.user_id && (
+            <button onClick={handleDelete} style={{ color: 'var(--red)', fontSize: 14, marginRight: 10, fontWeight: 600 }}>Delete</button>
+          )}
           <button className="close-btn" onClick={onClose}>✕</button>
         </div>
         <div className="story-media">

@@ -71,9 +71,29 @@ router.get('/feed', auth, (req, res) => {
 });
 
 router.get('/user/:userId', auth, (req, res) => {
-  // Get all stories of a user (including expired ones for highlights management)
+  const isMe = req.user.id === req.params.userId;
+  let isFollowing = false;
+  if (!isMe) {
+    isFollowing = !!db.prepare('SELECT 1 FROM follows WHERE follower_id=? AND following_id=?').get(req.user.id, req.params.userId);
+    
+    // Check if blocked
+    const amIBlocked = db.prepare('SELECT 1 FROM blocks WHERE blocker_id=? AND blocked_id=?').get(req.params.userId, req.user.id);
+    if (amIBlocked) return res.status(403).json({ error: 'Blocked' });
+    
+    // User wants only followers to see stories
+    if (!isFollowing) return res.json([]);
+  }
+
   const stories = db.prepare('SELECT * FROM stories WHERE user_id=? ORDER BY created_at DESC').all(req.params.userId);
   res.json(stories);
+});
+
+router.delete('/:id', auth, (req, res) => {
+  const story = db.prepare('SELECT 1 FROM stories WHERE id=? AND user_id=?').get(req.params.id, req.user.id);
+  if (!story) return res.status(404).json({ error: 'Story not found' });
+
+  db.prepare('DELETE FROM stories WHERE id=?').run(req.params.id);
+  res.json({ deleted: true });
 });
 
 module.exports = router;
