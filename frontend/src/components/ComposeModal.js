@@ -102,9 +102,39 @@ export default function ComposeModal({ onClose, onPosted, replyTo = null }) {
               )}
 
               <div className="compose-actions">
-                <button className="media-btn" onClick={() => fileRef.current?.click()} title="Add Photo or Video">
-                  🖼️
+                {/* Photo button */}
+                <button
+                  className="media-picker-btn"
+                  onClick={() => fileRef.current?.click()}
+                  title="Add Photo"
+                  type="button"
+                >
+                  <span className="media-picker-icon media-picker-icon--photo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="3"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <path d="M21 15l-5-5L5 21"/>
+                    </svg>
+                  </span>
+                  <span className="media-picker-label">Photo</span>
                 </button>
+
+                {/* Video button */}
+                <button
+                  className="media-picker-btn"
+                  onClick={() => fileRef.current?.click()}
+                  title="Add Video"
+                  type="button"
+                >
+                  <span className="media-picker-icon media-picker-icon--video">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="6" width="15" height="12" rx="2"/>
+                      <path d="M17 10l5-3v10l-5-3V10z"/>
+                    </svg>
+                  </span>
+                  <span className="media-picker-label">Video</span>
+                </button>
+
                 <input
                   type="file"
                   ref={fileRef}

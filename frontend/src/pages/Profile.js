@@ -5,6 +5,7 @@ import api from '../utils/api';
 import PostCard from '../components/PostCard';
 import { useAuth } from '../context/AuthContext';
 import { Avatar } from '../components/PostCard';
+import StoryViewer from '../components/StoryViewer';
 
 export default function Profile() {
   const { username } = useParams();
@@ -155,6 +156,18 @@ export default function Profile() {
                 <button className={`btn-follow ${profile.isFollowing ? 'following' : ''}`} onClick={handleFollow}>
                   {profile.isFollowing ? 'Following' : 'Follow'}
                 </button>
+                <button 
+                  className="btn btn-outline" 
+                  style={{ color: profile.isBlocked ? 'var(--accent)' : 'inherit' }}
+                  onClick={async () => {
+                    if (window.confirm(`Are you sure you want to ${profile.isBlocked ? 'unblock' : 'block'} this user?`)) {
+                      const res = await api.post(`/users/${profile.id}/block`);
+                      setProfile(prev => ({ ...prev, isBlocked: res.data.blocked, isFollowing: false }));
+                    }
+                  }}
+                >
+                  {profile.isBlocked ? 'Unblock' : 'Block'}
+                </button>
               </>
             )}
           </div>
@@ -186,6 +199,8 @@ export default function Profile() {
           </div>
         </div>
       </div>
+
+      <HighlightsSection userId={profile.id} isMe={isMe} />
 
       <div className="tabs">
         <button className={`tab ${tab === 'posts' ? 'active' : ''}`} onClick={() => setTab('posts')}>Posts</button>
@@ -269,6 +284,93 @@ export default function Profile() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function HighlightsSection({ userId, isMe }) {
+  const [highlights, setHighlights] = useState([]);
+  const [showCreate, setShowCreate] = useState(false);
+  const [selectedStories, setSelectedStories] = useState([]);
+  const [allStories, setAllStories] = useState([]);
+  const [title, setTitle] = useState('');
+  const [activeHighlight, setActiveHighlight] = useState(null);
+
+  useEffect(() => {
+    api.get(`/highlights/user/${userId}`).then(r => setHighlights(r.data));
+  }, [userId]);
+
+  const openCreate = () => {
+    api.get(`/stories/user/${userId}`).then(r => {
+      setAllStories(r.data);
+      setShowCreate(true);
+    });
+  };
+
+  const handleCreate = async () => {
+    if (!title || !selectedStories.length) return alert('Please enter a title and select stories');
+    try {
+      const res = await api.post('/highlights', {
+        title,
+        story_ids: selectedStories,
+        cover_url: allStories.find(s => s.id === selectedStories[0])?.media_url || ''
+      });
+      setHighlights([res.data, ...highlights]);
+      setShowCreate(false);
+      setTitle('');
+      setSelectedStories([]);
+    } catch (e) {
+      alert('Failed to create highlight');
+    }
+  };
+
+  return (
+    <div className="highlights-container" style={{ padding: '0 20px', marginBottom: 20, display: 'flex', gap: 16, overflowX: 'auto', scrollbarWidth: 'none' }}>
+      {isMe && (
+        <div className="highlight-item" onClick={openCreate} style={{ textAlign: 'center', cursor: 'pointer' }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', border: '1px dashed var(--text3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>+</div>
+          <div style={{ fontSize: 12, marginTop: 4 }}>New</div>
+        </div>
+      )}
+      {highlights.map(h => (
+        <div key={h.id} className="highlight-item" onClick={() => setActiveHighlight(h)} style={{ textAlign: 'center', cursor: 'pointer' }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', border: '2px solid var(--border)', overflow: 'hidden', padding: 2 }}>
+            <img src={h.cover_url || '/placeholder-avatar.png'} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+          </div>
+          <div style={{ fontSize: 12, marginTop: 4, maxWidth: 64, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.title}</div>
+        </div>
+      ))}
+
+      {showCreate && (
+        <div className="modal-overlay" onClick={() => setShowCreate(false)}>
+          <div className="modal" style={{ maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <button className="back-btn" onClick={() => setShowCreate(false)}>✕</button>
+              New Highlight
+              <button className="btn btn-primary" style={{ marginLeft: 'auto' }} onClick={handleCreate}>Create</button>
+            </div>
+            <div style={{ padding: 20 }}>
+              <input className="form-input" placeholder="Highlight Title" value={title} onChange={e => setTitle(e.target.value)} style={{ marginBottom: 16 }} />
+              <div style={{ maxHeight: 300, overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                {allStories.map(s => (
+                  <div key={s.id} onClick={() => {
+                    setSelectedStories(prev => prev.includes(s.id) ? prev.filter(id => id !== s.id) : [...prev, s.id]);
+                  }} style={{ aspectRatio: '9/16', position: 'relative', cursor: 'pointer', opacity: selectedStories.includes(s.id) ? 1 : 0.6 }}>
+                    {s.media_type === 'image' ? (
+                      <img src={s.media_url} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 4 }} alt="" />
+                    ) : (
+                      <video src={s.media_url} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 4 }} />
+                    )}
+                    {selectedStories.includes(s.id) && <div style={{ position: 'absolute', top: 4, right: 4, background: 'var(--accent)', color: 'white', borderRadius: '50%', width: 18, height: 18, fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✓</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeHighlight && <StoryViewer groupedStories={[{ ...activeHighlight, stories: activeHighlight.stories }]} initialUserIndex={0} onClose={() => setActiveHighlight(null)} />}
     </div>
   );
 }

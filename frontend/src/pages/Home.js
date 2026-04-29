@@ -4,6 +4,7 @@ import PostCard from '../components/PostCard';
 import { useAuth } from '../context/AuthContext';
 import { Avatar } from '../components/PostCard';
 import ComposeModal from '../components/ComposeModal';
+import Stories from '../components/Stories';
 
 export default function Home() {
   const { user } = useAuth();
@@ -32,6 +33,8 @@ export default function Home() {
       <div className="page-header">
         <span style={{ fontFamily: 'var(--font-display)' }}>Home</span>
       </div>
+
+      <Stories />
 
       <div className="tabs">
         <button className={`tab ${tab === 'for-you' ? 'active' : ''}`} onClick={() => setTab('for-you')}>For You</button>

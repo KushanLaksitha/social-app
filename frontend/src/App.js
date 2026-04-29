@@ -11,7 +11,9 @@ import Messages from './pages/Messages';
 import Notifications from './pages/Notifications';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Settings from './pages/Settings';
 import './index.css';
+import './stories.css';
 
 function Layout({ children, hideRight = false }) {
   return (
@@ -79,6 +81,12 @@ function AppRoutes() {
       <Route path="/post/:id" element={
         <ProtectedRoute>
           <Layout><PostDetail /></Layout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <Layout><Settings /></Layout>
         </ProtectedRoute>
       } />
 

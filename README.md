@@ -32,6 +32,9 @@
 - 🏠 **Smart Feed** — Following feed that respects each post's visibility setting
 - 🔍 **Explore** — Browse public trending posts; search for users by name or username
 - 👤 **Enhanced Profiles** — Custom avatars and cover photos, full-size image viewer, bio, educational qualifications, and detailed follower/following/post stats
+- 📽️ **Stories** — Share photos and videos (up to 1 minute) that disappear after 24 hours; view active stories from users you follow
+- 🌟 **Highlights** — Save and group your favorite old stories as highlights on your profile page
+- 🚫 **Blocking System** — Block users to prevent interaction; manage blocked users in Settings to unblock them
 - 🛡️ **Media Privacy** — Server-side AES encryption for all uploaded images/videos; raw files never stored in plaintext on disk
 - 📵 **Screenshot Deterrents** — Right-click disabled on media; `PrintScreen` and window-blur events blur the entire app to deter screen capture tools
 - 📱 **Responsive UI** — Works flawlessly on desktop, tablet, and mobile browsers
@@ -302,6 +305,22 @@ npx expo start
 | POST | `/api/users/:id/follow` | ✅ | Follow / unfollow |
 | GET | `/api/users/:id/followers` | ❌ | List followers |
 | GET | `/api/users/:id/following` | ❌ | List following |
+| POST | `/api/users/:id/block` | ✅ | Block / unblock user |
+| GET | `/api/users/settings/blocked` | ✅ | List blocked users |
+
+### Stories
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/stories` | ✅ | Upload a story (photo/video) |
+| GET | `/api/stories/feed` | ✅ | Get active stories feed |
+| GET | `/api/stories/user/:userId`| ✅ | Get all stories of a user |
+
+### Highlights
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/highlights` | ✅ | Create a new highlight |
+| GET | `/api/highlights/user/:userId`| ❌ | Get user's highlights |
+| DELETE | `/api/highlights/:id` | ✅ | Delete a highlight |
 
 ### Chat
 | Method | Endpoint | Auth | Description |

@@ -895,5 +895,4 @@ input, textarea { font-family: inherit; }
   margin: 0 19px;
   flex-shrink: 0;
 }
-. b l u r r e d - s c r e e n   {   f i l t e r :   b l u r ( 2 0 p x )   ! i m p o r t a n t ;   o p a c i t y :   0 . 5 ;   p o i n t e r - e v e n t s :   n o n e ;   }  
- 
+.blurred-screen { filter: blur(20px) !important; opacity: 0.5; pointer-events: none; }
