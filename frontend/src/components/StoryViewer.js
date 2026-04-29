@@ -13,21 +13,32 @@ export default function StoryViewer({ groupedStories, initialUserIndex, onClose 
   const currentUser = groupedStories[userIndex];
   const currentStory = currentUser.stories[storyIndex];
 
+  const [localStory, setLocalStory] = useState(currentStory);
+
+  useEffect(() => {
+    setLocalStory(currentStory);
+  }, [currentStory]);
+
   useEffect(() => {
     // Record view
-    if (currentStory) {
-      api.post(`/stories/${currentStory.id}/view`).catch(() => {});
+    if (localStory) {
+      api.post(`/stories/${localStory.id}/view`).then(res => {
+        if (res.data.viewed) {
+          setLocalStory(prev => ({ ...prev, views_count: (prev.views_count || 0) + 1 }));
+        }
+      }).catch(() => {});
     }
-  }, [currentStory]);
+  }, [localStory?.id]);
 
   const handleLike = async (e) => {
     e.stopPropagation();
     try {
-      const res = await api.post(`/stories/${currentStory.id}/like`);
-      currentStory.liked = res.data.liked;
-      currentStory.likes_count = res.data.liked ? (currentStory.likes_count || 0) + 1 : (currentStory.likes_count || 0) - 1;
-      // Trigger re-render (hacky for this local state)
-      setStoryIndex(storyIndex);
+      const res = await api.post(`/stories/${localStory.id}/like`);
+      setLocalStory(prev => ({
+        ...prev,
+        liked: res.data.liked,
+        likes_count: res.data.liked ? (prev.likes_count || 0) + 1 : (prev.likes_count || 0) - 1
+      }));
     } catch (e) {
       alert('Failed to like story');
     }
@@ -38,7 +49,7 @@ export default function StoryViewer({ groupedStories, initialUserIndex, onClose 
     if (!reply.trim()) return;
     setSending(true);
     try {
-      await api.post(`/stories/${currentStory.id}/reply`, { content: reply });
+      await api.post(`/stories/${localStory.id}/reply`, { content: reply });
       setReply('');
       alert('Reply sent!');
     } catch (e) {
@@ -50,7 +61,7 @@ export default function StoryViewer({ groupedStories, initialUserIndex, onClose 
   const handleDelete = async () => {
     if (window.confirm('Delete this story?')) {
       try {
-        await api.delete(`/stories/${currentStory.id}`);
+        await api.delete(`/stories/${localStory.id}`);
         // For simplicity, just close the viewer and let parent refresh
         onClose();
       } catch (e) {
@@ -133,10 +144,10 @@ export default function StoryViewer({ groupedStories, initialUserIndex, onClose 
         <div className="story-footer" onClick={e => e.stopPropagation()}>
           <div className="story-stats">
             <div className="story-stat">
-              <span style={{ fontSize: 18 }}>👁️</span> {currentStory.views_count || 0}
+              <span style={{ fontSize: 18 }}>👁️</span> {localStory.views_count || 0}
             </div>
-            <button className={`story-stat ${currentStory.liked ? 'liked' : ''}`} onClick={handleLike}>
-              <span style={{ fontSize: 18 }}>{currentStory.liked ? '❤️' : '🤍'}</span> {currentStory.likes_count || 0}
+            <button className={`story-stat ${localStory.liked ? 'liked' : ''}`} onClick={handleLike}>
+              <span style={{ fontSize: 18 }}>{localStory.liked ? '❤️' : '🤍'}</span> {localStory.likes_count || 0}
             </button>
           </div>
           

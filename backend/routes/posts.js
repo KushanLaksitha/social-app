@@ -33,10 +33,14 @@ router.get('/feed', auth, (req, res) => {
       p.user_id = ? OR
       (p.user_id IN (SELECT following_id FROM follows WHERE follower_id = ?) AND p.visibility != 'onlyme')
     )
+    AND p.user_id NOT IN (SELECT blocked_id FROM blocks WHERE blocker_id = ?)
+    AND p.user_id NOT IN (SELECT blocker_id FROM blocks WHERE blocked_id = ?)
     ${cursor ? 'AND p.created_at < ?' : ''}
     ORDER BY p.created_at DESC LIMIT ?
   `;
-  const params = cursor ? [req.user.id, req.user.id, cursor, parseInt(limit)] : [req.user.id, req.user.id, parseInt(limit)];
+  const params = cursor 
+    ? [req.user.id, req.user.id, req.user.id, req.user.id, cursor, parseInt(limit)] 
+    : [req.user.id, req.user.id, req.user.id, req.user.id, parseInt(limit)];
   const posts = db.prepare(query).all(...params).map(p => enrichPost(p, req.user.id));
   res.json(posts);
 });
@@ -45,8 +49,18 @@ router.get('/feed', auth, (req, res) => {
 router.get('/explore', optionalAuth, (req, res) => {
   const { cursor, limit = 20 } = req.query;
   const userId = req.user?.id;
-  let query = `SELECT * FROM posts WHERE is_reply=0 AND visibility='public' ${cursor ? 'AND created_at < ?' : ''} ORDER BY likes_count DESC, created_at DESC LIMIT ?`;
-  const params = cursor ? [cursor, parseInt(limit)] : [parseInt(limit)];
+  let query = `
+    SELECT * FROM posts 
+    WHERE is_reply=0 AND visibility='public' 
+    ${userId ? 'AND user_id NOT IN (SELECT blocked_id FROM blocks WHERE blocker_id = ?) ' : ''}
+    ${userId ? 'AND user_id NOT IN (SELECT blocker_id FROM blocks WHERE blocked_id = ?) ' : ''}
+    ${cursor ? 'AND created_at < ?' : ''} 
+    ORDER BY likes_count DESC, created_at DESC LIMIT ?
+  `;
+  const params = [];
+  if (userId) { params.push(userId, userId); }
+  if (cursor) { params.push(cursor); }
+  params.push(parseInt(limit));
   const posts = db.prepare(query).all(...params).map(p => enrichPost(p, userId));
   res.json(posts);
 });
@@ -112,6 +126,12 @@ router.post('/', auth, (req, res, next) => {
 router.get('/:id', optionalAuth, (req, res) => {
   const post = db.prepare('SELECT * FROM posts WHERE id=?').get(req.params.id);
   if (!post) return res.status(404).json({ error: 'Post not found' });
+  
+  if (req.user) {
+    const isBlockedByMe = db.prepare('SELECT 1 FROM blocks WHERE blocker_id=? AND blocked_id=?').get(req.user.id, post.user_id);
+    const amIBlocked = db.prepare('SELECT 1 FROM blocks WHERE blocker_id=? AND blocked_id=?').get(post.user_id, req.user.id);
+    if (isBlockedByMe || amIBlocked) return res.status(403).json({ error: 'Blocked' });
+  }
   
   if (post.user_id !== req.user?.id) {
     if (post.visibility === 'onlyme') return res.status(403).json({ error: 'Private post' });

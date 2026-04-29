@@ -174,12 +174,18 @@ db.exec(`
   );
 `);
 
-// Add visibility column to existing posts table if it doesn't exist
+// Migration for existing tables
 try {
   db.exec(`ALTER TABLE posts ADD COLUMN visibility TEXT DEFAULT 'public';`);
-} catch (e) {
-  // Column already exists, ignore
-}
+} catch (e) {}
+
+try {
+  db.exec(`ALTER TABLE stories ADD COLUMN views_count INTEGER DEFAULT 0;`);
+} catch (e) {}
+
+try {
+  db.exec(`ALTER TABLE stories ADD COLUMN likes_count INTEGER DEFAULT 0;`);
+} catch (e) {}
 
 // Wrap DatabaseSync to match better-sqlite3 API style
 const wrap = {

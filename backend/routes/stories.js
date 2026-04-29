@@ -57,9 +57,11 @@ router.get('/feed', auth, (req, res) => {
     FROM stories s
     JOIN users u ON s.user_id = u.id
     WHERE (s.user_id = ? OR s.user_id IN (SELECT following_id FROM follows WHERE follower_id = ?))
+    AND s.user_id NOT IN (SELECT blocked_id FROM blocks WHERE blocker_id = ?)
+    AND s.user_id NOT IN (SELECT blocker_id FROM blocks WHERE blocked_id = ?)
     AND s.expires_at > ?
     ORDER BY s.created_at DESC
-  `).all(req.user.id, req.user.id, now);
+  `).all(req.user.id, req.user.id, req.user.id, req.user.id, now);
 
   // Group by user
   const grouped = stories.reduce((acc, s) => {

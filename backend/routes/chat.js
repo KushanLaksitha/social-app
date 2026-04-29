@@ -30,6 +30,10 @@ router.get('/conversations', auth, (req, res) => {
 
 // Get or create conversation with user
 router.post('/conversations/:userId', auth, (req, res) => {
+  const isBlockedByMe = db.prepare('SELECT 1 FROM blocks WHERE blocker_id=? AND blocked_id=?').get(req.user.id, req.params.userId);
+  const amIBlocked = db.prepare('SELECT 1 FROM blocks WHERE blocker_id=? AND blocked_id=?').get(req.params.userId, req.user.id);
+  if (isBlockedByMe || amIBlocked) return res.status(403).json({ error: 'Blocked' });
+
   const [a, b] = [req.user.id, req.params.userId].sort();
   let conv = db.prepare('SELECT * FROM conversations WHERE (user1_id=? AND user2_id=?) OR (user1_id=? AND user2_id=?)').get(a, b, b, a);
   if (!conv) {
@@ -56,6 +60,11 @@ router.get('/conversations/:convId/messages', auth, (req, res) => {
 router.post('/conversations/:convId/messages', auth, (req, res) => {
   const conv = db.prepare('SELECT * FROM conversations WHERE id=? AND (user1_id=? OR user2_id=?)').get(req.params.convId, req.user.id, req.user.id);
   if (!conv) return res.status(403).json({ error: 'Forbidden' });
+
+  const otherId = conv.user1_id === req.user.id ? conv.user2_id : conv.user1_id;
+  const isBlockedByMe = db.prepare('SELECT 1 FROM blocks WHERE blocker_id=? AND blocked_id=?').get(req.user.id, otherId);
+  const amIBlocked = db.prepare('SELECT 1 FROM blocks WHERE blocker_id=? AND blocked_id=?').get(otherId, req.user.id);
+  if (isBlockedByMe || amIBlocked) return res.status(403).json({ error: 'Blocked' });
 
   const { content } = req.body;
   if (!content?.trim()) return res.status(400).json({ error: 'Content required' });
