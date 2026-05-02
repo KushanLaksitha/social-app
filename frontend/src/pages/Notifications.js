@@ -4,6 +4,10 @@ import api from '../utils/api';
 import { Avatar } from '../components/PostCard';
 import { formatDistanceToNow } from '../utils/time';
 
+const NOTIF_TEXT = {
+  like: 'liked your post',
+  reply: 'replied to your post',
+  follow: 'followed you',
   repost: 'reposted your post',
   ban: 'Your account has been banned',
   post_removed: 'Your post was removed',
