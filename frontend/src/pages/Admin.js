@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import api from '../utils/api';
 
 const Admin = () => {
   const { user } = useAuth();
@@ -23,23 +24,17 @@ const Admin = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const headers = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
+      const [statsRes, usersRes, reportsRes, requestsRes] = await Promise.all([
+        api.get('/admin/stats'),
+        api.get('/admin/users'),
+        api.get('/admin/reports'),
+        api.get('/admin/requests')
+      ]);
       
-      const statsRes = await fetch('/api/admin/stats', { headers });
-      const statsData = await statsRes.json();
-      setStats(statsData);
-
-      const usersRes = await fetch('/api/admin/users', { headers });
-      const usersData = await usersRes.json();
-      setUsers(usersData);
-
-      const reportsRes = await fetch('/api/admin/reports', { headers });
-      const reportsData = await reportsRes.json();
-      setReports(reportsData);
-
-      const requestsRes = await fetch('/api/admin/requests', { headers });
-      const requestsData = await requestsRes.json();
-      setRequests(requestsData);
+      setStats(statsRes.data);
+      setUsers(usersRes.data);
+      setReports(reportsRes.data);
+      setRequests(requestsRes.data);
 
     } catch (error) {
       console.error('Error fetching admin data:', error);
@@ -53,15 +48,8 @@ const Admin = () => {
     if (isBanned && !reason) return;
 
     try {
-      const res = await fetch(`/api/admin/users/${userId}/ban`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ is_banned: isBanned, reason })
-      });
-      if (res.ok) {
+      const res = await api.post(`/admin/users/${userId}/ban`, { is_banned: isBanned, reason });
+      if (res.status === 200) {
         setUsers(users.map(u => u.id === userId ? { ...u, is_banned: isBanned ? 1 : 0, ban_reason: reason } : u));
       }
     } catch (error) {
@@ -74,15 +62,8 @@ const Admin = () => {
     if (action === 'remove_post' && !reason) return;
 
     try {
-      const res = await fetch(`/api/admin/reports/${reportId}/action`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ action, reason })
-      });
-      if (res.ok) {
+      const res = await api.post(`/admin/reports/${reportId}/action`, { action, reason });
+      if (res.status === 200) {
         setReports(reports.map(r => r.id === reportId ? { ...r, status: action === 'dismiss' ? 'dismissed' : 'resolved' } : r));
       }
     } catch (error) {
@@ -92,11 +73,8 @@ const Admin = () => {
 
   const handleResolveRequest = async (requestId) => {
     try {
-      const res = await fetch(`/api/admin/requests/${requestId}/resolve`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      if (res.ok) {
+      const res = await api.post(`/admin/requests/${requestId}/resolve`);
+      if (res.status === 200) {
         setRequests(requests.map(r => r.id === requestId ? { ...r, status: 'resolved' } : r));
       }
     } catch (error) {

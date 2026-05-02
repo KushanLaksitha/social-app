@@ -14,12 +14,14 @@ import Register from './pages/Register';
 import Settings from './pages/Settings';
 import Admin from './pages/Admin';
 import Support from './pages/Support';
+import { useLocation } from 'react-router-dom';
 import './index.css';
 import './stories.css';
 
 function Watermark() {
   const { user } = useAuth();
-  if (!user) return null;
+  const location = useLocation();
+  if (!user || location.pathname === '/admin') return null;
   const date = new Date().toLocaleDateString();
   const text = `${user.display_name} (@${user.username}) - ${date}`;
   

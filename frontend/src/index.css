@@ -978,9 +978,14 @@ input, textarea { font-family: inherit; }
   flex-wrap: wrap;
   justify-content: space-around;
   align-content: space-around;
-  opacity: 0.05;
+  opacity: 0; /* Hidden by default */
   overflow: hidden;
   user-select: none;
+  transition: opacity 0.3s ease;
+}
+
+body.blurred-screen .watermark-overlay {
+  opacity: 0.15; /* Visible when screen is blurred/captured */
 }
 
 .watermark-item {

@@ -36,7 +36,7 @@ export default function Sidebar() {
           <span>Vibe</span>
         </div>
 
-        {NAV.map(n => (
+        {NAV.filter(n => !(n.to === '/support' && user?.role === 'admin')).map(n => (
           <NavLink key={n.to} to={n.to} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
             <span className="nav-icon">{n.icon}</span>
             <span className="nav-label">{n.label}</span>
