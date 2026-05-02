@@ -15,8 +15,12 @@ const Admin = () => {
   
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchUser, setSearchUser] = useState(null);
   const [searchPosts, setSearchPosts] = useState([]);
+  const [searchFollowers, setSearchFollowers] = useState([]);
+  const [searchFollowing, setSearchFollowing] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [searchTab, setSearchTab] = useState('posts');
 
   useEffect(() => {
     if (user && user.role !== 'admin') {
@@ -105,12 +109,27 @@ const Admin = () => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
     setSearching(true);
+    setSearchUser(null);
     try {
-      const res = await api.get(`/admin/user/${searchQuery.trim()}/posts`);
-      setSearchPosts(res.data);
+      // First find user by username to get ID
+      const userRes = await api.get(`/users/${searchQuery.trim()}`);
+      const foundUser = userRes.data;
+      setSearchUser(foundUser);
+
+      const [postsRes, followersRes, followingRes] = await Promise.all([
+        api.get(`/admin/user/${foundUser.username}/posts`),
+        api.get(`/users/${foundUser.id}/followers`),
+        api.get(`/users/${foundUser.id}/following`)
+      ]);
+      
+      setSearchPosts(postsRes.data);
+      setSearchFollowers(followersRes.data);
+      setSearchFollowing(followingRes.data);
     } catch (e) {
-      alert('User not found or has no posts');
+      alert('User not found or error fetching data');
       setSearchPosts([]);
+      setSearchFollowers([]);
+      setSearchFollowing([]);
     } finally {
       setSearching(false);
     }
@@ -122,10 +141,24 @@ const Admin = () => {
       await api.post(`/admin/posts/${postId}/delete`);
       setSearchPosts(searchPosts.filter(p => p.id !== postId));
       alert('Post deleted');
-      // Update stats
       setStats(prev => ({ ...prev, postsCount: Math.max(0, prev.postsCount - 1) }));
     } catch (e) {
       alert('Failed to delete post');
+    }
+  };
+
+  const handleRemoveFollow = async (followerId, followingId, type) => {
+    if (!window.confirm('Are you sure you want to remove this follow relationship?')) return;
+    try {
+      await api.post('/admin/follows/remove', { follower_id: followerId, following_id: followingId });
+      if (type === 'follower') {
+        setSearchFollowers(searchFollowers.filter(f => f.id !== followerId));
+      } else {
+        setSearchFollowing(searchFollowing.filter(f => f.id !== followingId));
+      }
+      alert('Follow relationship removed');
+    } catch (e) {
+      alert('Failed to remove follow');
     }
   };
 
@@ -140,7 +173,7 @@ const Admin = () => {
           <button className={activeTab === 'users' ? 'active' : ''} onClick={() => setActiveTab('users')}>👥 Users</button>
           <button className={activeTab === 'reports' ? 'active' : ''} onClick={() => setActiveTab('reports')}>🚩 Reports {stats?.reportsCount > 0 && <span className="badge">{stats.reportsCount}</span>}</button>
           <button className={activeTab === 'requests' ? 'active' : ''} onClick={() => setActiveTab('requests')}>🆘 Requests {stats?.requestsCount > 0 && <span className="badge">{stats.requestsCount}</span>}</button>
-          <button className={activeTab === 'search' ? 'active' : ''} onClick={() => setActiveTab('search')}>🔍 Review Posts</button>
+          <button className={activeTab === 'search' ? 'active' : ''} onClick={() => setActiveTab('search')}>🔍 User Management</button>
         </div>
       </header>
 
@@ -274,33 +307,91 @@ const Admin = () => {
             <form onSubmit={handleSearch} className="search-form">
               <input 
                 type="text" 
-                placeholder="Enter username to review posts..." 
+                placeholder="Enter username to manage (e.g. testuser)..." 
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className="admin-search-input"
               />
-              <button type="submit" className="btn-search-submit">Search</button>
+              <button type="submit" className="btn-search-submit">Manage User</button>
             </form>
 
-            <div className="search-results" style={{ marginTop: 20 }}>
-              {searching ? <p>Searching...</p> : searchPosts.length === 0 ? <p className="empty-msg">Enter a username and click search to view posts.</p> : (
-                searchPosts.map(p => (
-                  <div key={p.id} className="report-card">
-                    <div className="report-header">
-                      <span className="timestamp">{new Date(p.created_at).toLocaleString()} | Visibility: {p.visibility}</span>
-                    </div>
-                    <div className="report-body">
-                      <p>{p.content}</p>
-                      {p.image && <img src={p.image} alt="post" style={{ maxWidth: '200px', borderRadius: 8, marginTop: 10 }} />}
-                      {p.video && <video src={p.video} controls style={{ maxWidth: '200px', borderRadius: 8, marginTop: 10 }} />}
-                    </div>
-                    <div className="report-actions">
-                      <button className="btn-remove" onClick={() => handleDeleteAnyPost(p.id)}>Delete Post</button>
-                    </div>
+            {searching ? <p style={{ marginTop: 20 }}>Fetching user data...</p> : searchUser && (
+              <div className="search-results" style={{ marginTop: 30 }}>
+                <div className="user-profile-header" style={{ display: 'flex', gap: 20, alignItems: 'center', marginBottom: 20 }}>
+                  <div className="avatar" style={{ width: 80, height: 80, borderRadius: '50%', background: searchUser.avatar?.startsWith('#') ? searchUser.avatar : '#6C63FF', fontSize: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {searchUser.avatar?.startsWith('#') ? searchUser.display_name[0].toUpperCase() : <img src={searchUser.avatar} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />}
                   </div>
-                ))
-              )}
-            </div>
+                  <div>
+                    <h2 style={{ margin: 0 }}>{searchUser.display_name}</h2>
+                    <p style={{ color: 'var(--text3)', margin: 0 }}>@{searchUser.username}</p>
+                  </div>
+                </div>
+
+                <div className="admin-tabs" style={{ marginBottom: 20 }}>
+                  <button className={searchTab === 'posts' ? 'active' : ''} onClick={() => setSearchTab('posts')}>Posts ({searchPosts.length})</button>
+                  <button className={searchTab === 'followers' ? 'active' : ''} onClick={() => setSearchTab('followers')}>Followers ({searchFollowers.length})</button>
+                  <button className={searchTab === 'following' ? 'active' : ''} onClick={() => setSearchTab('following')}>Following ({searchFollowing.length})</button>
+                </div>
+
+                {searchTab === 'posts' && (
+                  <div className="posts-review">
+                    {searchPosts.length === 0 ? <p className="empty-msg">No posts found.</p> : (
+                      searchPosts.map(p => (
+                        <div key={p.id} className="report-card">
+                          <div className="report-header">
+                            <span className="timestamp">{new Date(p.created_at).toLocaleString()}</span>
+                          </div>
+                          <div className="report-body">
+                            <p>{p.content}</p>
+                            {p.image && <img src={p.image} alt="post" style={{ maxWidth: '200px', borderRadius: 8, marginTop: 10 }} />}
+                          </div>
+                          <div className="report-actions">
+                            <button className="btn-remove" onClick={() => handleDeleteAnyPost(p.id)}>Delete Post</button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+
+                {searchTab === 'followers' && (
+                  <div className="follows-review">
+                    {searchFollowers.length === 0 ? <p className="empty-msg">No followers found.</p> : (
+                      searchFollowers.map(f => (
+                        <div key={f.id} className="user-item-admin" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div className="avatar avatar-sm" style={{ background: f.avatar?.startsWith('#') ? f.avatar : '#6C63FF', width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
+                              {f.avatar?.startsWith('#') ? f.display_name[0].toUpperCase() : <img src={f.avatar} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />}
+                            </div>
+                            <span>@{f.username} ({f.display_name})</span>
+                          </div>
+                          <button className="btn-remove" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => handleRemoveFollow(f.id, searchUser.id, 'follower')}>Remove Follower</button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+
+                {searchTab === 'following' && (
+                  <div className="follows-review">
+                    {searchFollowing.length === 0 ? <p className="empty-msg">Not following anyone.</p> : (
+                      searchFollowing.map(f => (
+                        <div key={f.id} className="user-item-admin" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div className="avatar avatar-sm" style={{ background: f.avatar?.startsWith('#') ? f.avatar : '#6C63FF', width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
+                              {f.avatar?.startsWith('#') ? f.display_name[0].toUpperCase() : <img src={f.avatar} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />}
+                            </div>
+                            <span>@{f.username} ({f.display_name})</span>
+                          </div>
+                          <button className="btn-remove" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => handleRemoveFollow(searchUser.id, f.id, 'following')}>Unfollow User</button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            {!searching && !searchUser && searchQuery && <p className="empty-msg">Search for a user to manage their content and connections.</p>}
           </div>
         )}
       </main>

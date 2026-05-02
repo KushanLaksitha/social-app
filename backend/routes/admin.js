@@ -223,4 +223,20 @@ router.post('/posts/:id/delete', adminAuth, (req, res) => {
   }
 });
 
+// --- Remove Follow Relationship by Admin ---
+router.post('/follows/remove', adminAuth, (req, res) => {
+  try {
+    const { follower_id, following_id } = req.body;
+    if (!follower_id || !following_id) return res.status(400).json({ error: 'Follower and Following IDs required' });
+
+    db.prepare('DELETE FROM follows WHERE follower_id = ? AND following_id = ?').run(follower_id, following_id);
+    db.prepare('UPDATE users SET following_count = MAX(0, following_count - 1) WHERE id = ?').run(follower_id);
+    db.prepare('UPDATE users SET followers_count = MAX(0, followers_count - 1) WHERE id = ?').run(following_id);
+
+    res.json({ message: 'Follow relationship removed successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
