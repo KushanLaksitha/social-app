@@ -206,7 +206,7 @@ export default function Profile() {
         )}
       </div>
 
-      <HighlightsSection userId={profile.id} isMe={isMe} />
+      <HighlightsSection userId={profile.id} isMe={isMe} role={profile.role} />
 
       {profile.role !== 'admin' && (
         <div className="tabs">
@@ -300,7 +300,7 @@ export default function Profile() {
   );
 }
 
-function HighlightsSection({ userId, isMe }) {
+function HighlightsSection({ userId, isMe, role }) {
   const [highlights, setHighlights] = useState([]);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedStories, setSelectedStories] = useState([]);
@@ -309,20 +309,16 @@ function HighlightsSection({ userId, isMe }) {
   const [activeHighlight, setActiveHighlight] = useState(null);
 
   useEffect(() => {
-    if (userId) {
-      api.get(`/users/${userId}`).then(res => {
-        if (res.data.role !== 'admin') {
-          api.get(`/highlights/user/${userId}`).then(r => setHighlights(r.data));
-        }
-      });
+    if (userId && role !== 'admin') {
+      api.get(`/highlights/user/${userId}`).then(r => setHighlights(r.data)).catch(() => {});
     }
-  }, [userId]);
+  }, [userId, role]);
 
   const openCreate = () => {
     api.get(`/stories/user/${userId}`).then(r => {
       setAllStories(r.data);
       setShowCreate(true);
-    });
+    }).catch(() => alert('Failed to fetch stories'));
   };
 
   const handleCreate = async () => {
