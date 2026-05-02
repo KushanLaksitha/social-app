@@ -966,3 +966,28 @@ input, textarea { font-family: inherit; }
   flex-shrink: 0;
 }
 .blurred-screen { filter: blur(20px) !important; opacity: 0.5; pointer-events: none; }
+.watermark-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 99999;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  align-content: space-around;
+  opacity: 0.05;
+  overflow: hidden;
+  user-select: none;
+}
+
+.watermark-item {
+  transform: rotate(-30deg);
+  font-size: 18px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--text);
+  padding: 80px;
+}

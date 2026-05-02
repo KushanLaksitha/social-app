@@ -17,9 +17,25 @@ import Support from './pages/Support';
 import './index.css';
 import './stories.css';
 
+function Watermark() {
+  const { user } = useAuth();
+  if (!user) return null;
+  const date = new Date().toLocaleDateString();
+  const text = `${user.display_name} (@${user.username}) - ${date}`;
+  
+  return (
+    <div className="watermark-overlay">
+      {[...Array(15)].map((_, i) => (
+        <div key={i} className="watermark-item">{text}</div>
+      ))}
+    </div>
+  );
+}
+
 function Layout({ children, hideRight = false }) {
   return (
     <div className="app-layout">
+      <Watermark />
       <Sidebar />
       <main className="main-content">
         {children}
