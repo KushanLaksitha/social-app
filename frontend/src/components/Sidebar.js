@@ -9,7 +9,6 @@ const NAV = [
   { to: '/explore', icon: '🔍', label: 'Explore' },
   { to: '/notifications', icon: '🔔', label: 'Notifications', badge: true },
   { to: '/messages', icon: '💬', label: 'Messages' },
-  { to: '/support', icon: '🆘', label: 'Support' },
 ];
 
 export default function Sidebar() {
@@ -36,7 +35,7 @@ export default function Sidebar() {
           <span>Vibe</span>
         </div>
 
-        {NAV.filter(n => !(n.to === '/support' && user?.role === 'admin')).map(n => (
+        {NAV.map(n => (
           <NavLink key={n.to} to={n.to} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
             <span className="nav-icon">{n.icon}</span>
             <span className="nav-label">{n.label}</span>
@@ -44,12 +43,6 @@ export default function Sidebar() {
           </NavLink>
         ))}
 
-        {user && user.role === 'admin' && (
-          <NavLink to="/admin" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-            <span className="nav-icon">🛡️</span>
-            <span className="nav-label">Admin Panel</span>
-          </NavLink>
-        )}
 
         {user && (
           <NavLink to={`/profile/${user.username}`} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
@@ -58,11 +51,9 @@ export default function Sidebar() {
           </NavLink>
         )}
 
-        {user && user.role !== 'admin' && (
-          <button className="btn-post" style={{ marginTop: 12 }} onClick={() => setShowCompose(true)}>
-            + New Post
-          </button>
-        )}
+        <button className="btn-post" style={{ marginTop: 12 }} onClick={() => setShowCompose(true)}>
+          + New Post
+        </button>
 
         <div style={{ flex: 1 }} />
 

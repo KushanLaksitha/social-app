@@ -148,7 +148,7 @@ export default function Profile() {
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
             {isMe ? (
               <button className="btn btn-outline" onClick={() => setEditMode(true)}>Edit Profile</button>
-            ) : me?.role !== 'admin' && (
+            ) : (
               <>
                 <button className="btn btn-outline" onClick={() => {
                   api.post(`/chat/conversations/${profile.id}`).then(r => navigate(`/messages/${r.data.id}`));
@@ -176,45 +176,37 @@ export default function Profile() {
         <div className="profile-name">{profile.display_name}</div>
         <div className="profile-username">@{profile.username}</div>
         
-        {profile.role !== 'admin' && (
-          <>
-            {profile.bio && <div className="profile-bio" style={{ marginTop: 8 }}>{profile.bio}</div>}
-            
-            {profile.education && (
-              <div style={{ marginTop: 8, fontSize: 14, color: 'var(--text2)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span>🎓</span> {profile.education}
-              </div>
-            )}
-          </>
+        {profile.bio && <div className="profile-bio" style={{ marginTop: 8 }}>{profile.bio}</div>}
+        
+        {profile.education && (
+          <div style={{ marginTop: 8, fontSize: 14, color: 'var(--text2)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>🎓</span> {profile.education}
+          </div>
         )}
 
         <div style={{ color: 'var(--text3)', fontSize: 13, marginTop: 8, marginBottom: 12 }}>
           📅 Joined {format(new Date(profile.created_at), 'MMMM yyyy')}
         </div>
 
-        {profile.role !== 'admin' && (
-          <div className="profile-stats">
-            <div className="stat-item" onClick={() => setTab('following')} style={{ cursor: 'pointer' }}>
-              <span className="stat-num">{profile.following_count}</span>
-              <span className="stat-label">Following</span>
-            </div>
-            <div className="stat-item" onClick={() => setTab('followers')} style={{ cursor: 'pointer' }}>
-              <span className="stat-num">{profile.followers_count}</span>
-              <span className="stat-label">Followers</span>
-            </div>
+        <div className="profile-stats">
+          <div className="stat-item" onClick={() => setTab('following')} style={{ cursor: 'pointer' }}>
+            <span className="stat-num">{profile.following_count}</span>
+            <span className="stat-label">Following</span>
           </div>
-        )}
+          <div className="stat-item" onClick={() => setTab('followers')} style={{ cursor: 'pointer' }}>
+            <span className="stat-num">{profile.followers_count}</span>
+            <span className="stat-label">Followers</span>
+          </div>
+        </div>
       </div>
 
-      <HighlightsSection userId={profile.id} isMe={isMe} role={profile.role} />
+      <HighlightsSection userId={profile.id} isMe={isMe} />
 
-      {profile.role !== 'admin' && (
-        <div className="tabs">
-          <button className={`tab ${tab === 'posts' ? 'active' : ''}`} onClick={() => setTab('posts')}>Posts</button>
-          <button className={`tab ${tab === 'followers' ? 'active' : ''}`} onClick={() => setTab('followers')}>Followers</button>
-          <button className={`tab ${tab === 'following' ? 'active' : ''}`} onClick={() => setTab('following')}>Following</button>
-        </div>
-      )}
+      <div className="tabs">
+        <button className={`tab ${tab === 'posts' ? 'active' : ''}`} onClick={() => setTab('posts')}>Posts</button>
+        <button className={`tab ${tab === 'followers' ? 'active' : ''}`} onClick={() => setTab('followers')}>Followers</button>
+        <button className={`tab ${tab === 'following' ? 'active' : ''}`} onClick={() => setTab('following')}>Following</button>
+      </div>
 
       {tab === 'posts' ? (
         posts.length === 0 ? (
@@ -243,30 +235,26 @@ export default function Profile() {
               </button>
             </div>
             <div style={{ padding: '20px', maxHeight: '80vh', overflowY: 'auto' }}>
-              {profile.role !== 'admin' && (
-                <>
-                  <div className="form-group">
-                    <label className="form-label">Avatar Photo</label>
-                    <input type="file" accept="image/*" onChange={e => setEditData(p => ({ ...p, avatarFile: e.target.files[0] }))} />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Cover Photo</label>
-                    <input type="file" accept="image/*" onChange={e => setEditData(p => ({ ...p, coverFile: e.target.files[0] }))} />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Display Name</label>
-                    <input className="form-input" value={editData.display_name} onChange={e => setEditData(p => ({ ...p, display_name: e.target.value }))} />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Bio</label>
-                    <textarea className="form-input" rows={2} value={editData.bio} onChange={e => setEditData(p => ({ ...p, bio: e.target.value.slice(0, 200) }))} />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Education / Qualifications</label>
-                    <input className="form-input" placeholder="e.g. BS in Computer Science at MIT" value={editData.education} onChange={e => setEditData(p => ({ ...p, education: e.target.value }))} />
-                  </div>
-                </>
-              )}
+              <div className="form-group">
+                <label className="form-label">Avatar Photo</label>
+                <input type="file" accept="image/*" onChange={e => setEditData(p => ({ ...p, avatarFile: e.target.files[0] }))} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Cover Photo</label>
+                <input type="file" accept="image/*" onChange={e => setEditData(p => ({ ...p, coverFile: e.target.files[0] }))} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Display Name</label>
+                <input className="form-input" value={editData.display_name} onChange={e => setEditData(p => ({ ...p, display_name: e.target.value }))} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Bio</label>
+                <textarea className="form-input" rows={2} value={editData.bio} onChange={e => setEditData(p => ({ ...p, bio: e.target.value.slice(0, 200) }))} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Education / Qualifications</label>
+                <input className="form-input" placeholder="e.g. BS in Computer Science at MIT" value={editData.education} onChange={e => setEditData(p => ({ ...p, education: e.target.value }))} />
+              </div>
 
               <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
                 <h4 style={{ marginBottom: 12 }}>Change Password</h4>
@@ -300,7 +288,7 @@ export default function Profile() {
   );
 }
 
-function HighlightsSection({ userId, isMe, role }) {
+function HighlightsSection({ userId, isMe }) {
   const [highlights, setHighlights] = useState([]);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedStories, setSelectedStories] = useState([]);
@@ -309,10 +297,10 @@ function HighlightsSection({ userId, isMe, role }) {
   const [activeHighlight, setActiveHighlight] = useState(null);
 
   useEffect(() => {
-    if (userId && role !== 'admin') {
+    if (userId) {
       api.get(`/highlights/user/${userId}`).then(r => setHighlights(r.data)).catch(() => {});
     }
-  }, [userId, role]);
+  }, [userId]);
 
   const openCreate = () => {
     api.get(`/stories/user/${userId}`).then(r => {

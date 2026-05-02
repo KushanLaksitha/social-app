@@ -37,9 +37,6 @@
 - 🚫 **Blocking System** — Block users to prevent interaction; manage blocked users in Settings to unblock them
 - 🛡️ **Media Privacy** — Server-side AES encryption for all uploaded images/videos; raw files never stored in plaintext on disk
 - 📵 **Screenshot Deterrents** — Right-click disabled on media; `PrintScreen` and window-blur events blur the entire app to deter screen capture tools with a security overlay
-- 🛡️ **Admin Panel** — Dedicated dashboard for admins to manage users (Ban/Unban), review reports, and remove infringing content
-- 🚩 **Reporting System** — Users can report posts for violations, which appear in the admin's moderation queue
-- 🆘 **Support Requests** — Dedicated support page for users to send messages and requests directly to the admin team
 - 📱 **Responsive UI** — Works flawlessly on desktop, tablet, and mobile browsers
 
 ### 📱 Mobile Application (React Native / Expo)
@@ -342,18 +339,6 @@ npx expo start
 ### Media
 | GET | `/api/media/:filename` | ❌ | Serve decrypted media (AES-256) |
 
-### Admin
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/admin/stats` | Admin | Get dashboard statistics |
-| GET | `/api/admin/users` | Admin | List all users with status |
-| POST | `/api/admin/users/:id/ban`| Admin | Ban or unban a user with reason |
-| GET | `/api/admin/reports` | Admin | List all reported posts |
-| POST | `/api/admin/reports/:id/action`| Admin | Resolve report (remove post / dismiss) |
-| GET | `/api/admin/requests` | Admin | List all user support requests |
-| POST | `/api/admin/request` | ✅ | Submit a new support request |
-| POST | `/api/admin/report` | ✅ | Report a post for violations |
-
 ---
 
 ## 🗄 Database Schema
@@ -370,9 +355,7 @@ The SQLite database (`backend/db/social.db`) is auto-created on first run. If a 
 | `post_views` | post_id, user_id (unique per user) |
 | `conversations` | id, user1_id, user2_id, last_message, last_message_at |
 | `messages` | id, conversation_id, sender_id, content, read |
-| `notifications` | id, user_id, actor_id, type (like/follow/reply/repost/ban/post_removed), post_id, message (reason), read |
-| `reports` | id, reporter_id, post_id, reason, status (pending/resolved/dismissed) |
-| `admin_requests` | id, user_id, subject, message, status (open/resolved) |
+| `notifications` | id, user_id, actor_id, type (like/follow/reply/repost), post_id, read |
 
 ---
 

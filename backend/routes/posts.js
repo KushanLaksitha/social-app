@@ -71,7 +71,6 @@ const fs = require('fs');
 const { saveEncrypted } = require('../utils/encryption');
 
 router.post('/', auth, (req, res, next) => {
-  if (req.user.role === 'admin') return res.status(403).json({ error: 'Admins cannot create regular posts. Use announcements instead.' });
   const upload = req.app.get('upload');
   const encryptUpload = req.app.get('encryptUpload');
   upload.single('media')(req, res, (uploadErr) => {

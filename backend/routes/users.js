@@ -42,7 +42,6 @@ router.get('/:username', optionalAuth, (req, res) => {
   res.json({ ...user, isFollowing, isBlocked });
 });
 router.post('/:id/follow', auth, (req, res) => {
-  if (req.user.role === 'admin') return res.status(403).json({ error: 'Admins cannot follow users.' });
   if (req.params.id === req.user.id) return res.status(400).json({ error: "Can't follow yourself" });
 
   const isBlockedByMe = db.prepare('SELECT 1 FROM blocks WHERE blocker_id=? AND blocked_id=?').get(req.user.id, req.params.id);

@@ -17,9 +17,7 @@ const enrichStory = (story, userId) => {
 };
 
 router.post('/', auth, (req, res) => {
-  if (req.user.role === 'admin') return res.status(403).json({ error: 'Admins cannot post stories.' });
   const upload = req.app.get('upload');
-  upload.single('media')(req, res, (uploadErr) => {
     if (uploadErr) return res.status(400).json({ error: 'File upload failed' });
     if (!req.file) return res.status(400).json({ error: 'Media required' });
 

@@ -2,19 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { Avatar } from './PostCard';
-import { useAuth } from '../context/AuthContext';
 
 export default function RightPanel() {
-  const { user } = useAuth();
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user?.role === 'admin') return;
     api.get('/users/suggestions').then(r => setSuggestions(r.data)).catch(() => {});
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     if (!query.trim()) { setSearchResults([]); return; }
@@ -25,7 +22,6 @@ export default function RightPanel() {
   }, [query]);
 
   const handleFollow = async (userId) => {
-    if (user?.role === 'admin') return;
     await api.post(`/users/${userId}/follow`);
     setSuggestions(prev => prev.filter(u => u.id !== userId));
   };
@@ -57,7 +53,7 @@ export default function RightPanel() {
         </div>
       )}
 
-      {user?.role !== 'admin' && suggestions.length > 0 && (
+      {suggestions.length > 0 && (
         <div className="widget">
           <div className="widget-title">Who to Follow</div>
           {suggestions.map(u => (

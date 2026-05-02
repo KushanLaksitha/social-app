@@ -12,8 +12,6 @@ import Notifications from './pages/Notifications';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Settings from './pages/Settings';
-import Admin from './pages/Admin';
-import Support from './pages/Support';
 import { useLocation } from 'react-router-dom';
 import './index.css';
 import './stories.css';
@@ -21,7 +19,7 @@ import './stories.css';
 function Watermark() {
   const { user } = useAuth();
   const location = useLocation();
-  if (!user || location.pathname === '/admin') return null;
+  if (!user) return null;
   const date = new Date().toLocaleDateString();
   const text = `${user.display_name} (@${user.username}) - ${date}`;
   
@@ -54,12 +52,6 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
-function AdminRoute({ children }) {
-  const { user, loading } = useAuth();
-  if (loading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="spinner" /></div>;
-  if (!user || user.role !== 'admin') return <Navigate to="/home" />;
-  return children;
-}
 
 function AppRoutes() {
   const { user } = useAuth();
@@ -117,17 +109,7 @@ function AppRoutes() {
         </ProtectedRoute>
       } />
 
-      <Route path="/admin" element={
-        <AdminRoute>
-          <Layout><Admin /></Layout>
-        </AdminRoute>
-      } />
 
-      <Route path="/support" element={
-        <ProtectedRoute>
-          <Layout><Support /></Layout>
-        </ProtectedRoute>
-      } />
 
       <Route path="/" element={<Navigate to={user ? "/home" : "/login"} />} />
       <Route path="*" element={<Navigate to="/" />} />
