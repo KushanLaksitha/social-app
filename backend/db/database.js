@@ -23,6 +23,9 @@ db.exec(`
     following_count INTEGER DEFAULT 0,
     posts_count INTEGER DEFAULT 0,
     education TEXT DEFAULT '',
+    role TEXT DEFAULT 'user',
+    is_banned INTEGER DEFAULT 0,
+    ban_reason TEXT DEFAULT '',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -110,10 +113,32 @@ db.exec(`
     actor_id TEXT NOT NULL,
     type TEXT NOT NULL,
     post_id TEXT DEFAULT NULL,
+    message TEXT DEFAULT '',
     read INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (actor_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS reports (
+    id TEXT PRIMARY KEY,
+    reporter_id TEXT NOT NULL,
+    post_id TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    status TEXT DEFAULT 'pending',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS admin_requests (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    message TEXT NOT NULL,
+    status TEXT DEFAULT 'open',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS blocks (
@@ -185,6 +210,22 @@ try {
 
 try {
   db.exec(`ALTER TABLE stories ADD COLUMN likes_count INTEGER DEFAULT 0;`);
+} catch (e) {}
+
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user';`);
+} catch (e) {}
+
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN is_banned INTEGER DEFAULT 0;`);
+} catch (e) {}
+
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN ban_reason TEXT DEFAULT '';`);
+} catch (e) {}
+
+try {
+  db.exec(`ALTER TABLE notifications ADD COLUMN message TEXT DEFAULT '';`);
 } catch (e) {}
 
 // Wrap DatabaseSync to match better-sqlite3 API style

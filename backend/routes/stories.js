@@ -147,8 +147,17 @@ router.get('/user/:userId', auth, (req, res) => {
 });
 
 router.delete('/:id', auth, (req, res) => {
-  const story = db.prepare('SELECT 1 FROM stories WHERE id=? AND user_id=?').get(req.params.id, req.user.id);
+  const story = db.prepare('SELECT * FROM stories WHERE id=? AND user_id=?').get(req.params.id, req.user.id);
   if (!story) return res.status(404).json({ error: 'Story not found' });
+
+  // Delete physical file
+  if (story.media_url) {
+    const filename = story.media_url.split('/').pop();
+    const filePath = path.join(__dirname, '../uploads', filename);
+    if (fs.existsSync(filePath)) {
+      try { fs.unlinkSync(filePath); } catch (e) { console.error('Failed to delete story file:', filePath, e); }
+    }
+  }
 
   db.prepare('DELETE FROM stories WHERE id=?').run(req.params.id);
   res.json({ deleted: true });

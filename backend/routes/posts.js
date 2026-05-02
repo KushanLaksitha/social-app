@@ -194,6 +194,17 @@ router.post('/:id/repost', auth, (req, res) => {
 router.delete('/:id', auth, (req, res) => {
   const post = db.prepare('SELECT * FROM posts WHERE id=? AND user_id=?').get(req.params.id, req.user.id);
   if (!post) return res.status(404).json({ error: 'Not found or unauthorized' });
+
+  // Delete physical files
+  const mediaUrls = [post.image, post.video].filter(Boolean);
+  mediaUrls.forEach(url => {
+    const filename = url.split('/').pop();
+    const filePath = path.join(__dirname, '../uploads', filename);
+    if (fs.existsSync(filePath)) {
+      try { fs.unlinkSync(filePath); } catch (e) { console.error('Failed to delete file:', filePath, e); }
+    }
+  });
+
   db.prepare('DELETE FROM posts WHERE id=?').run(req.params.id);
   db.prepare('UPDATE users SET posts_count = MAX(0, posts_count-1) WHERE id=?').run(req.user.id);
   res.json({ deleted: true });

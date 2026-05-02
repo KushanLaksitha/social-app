@@ -4,13 +4,11 @@ import api from '../utils/api';
 import { Avatar } from '../components/PostCard';
 import { formatDistanceToNow } from '../utils/time';
 
-const NOTIF_ICONS = { like: '❤️', reply: '💬', follow: '👤', repost: '🔁' };
-const NOTIF_TEXT = {
-  like: 'liked your post',
-  reply: 'replied to your post',
-  follow: 'followed you',
   repost: 'reposted your post',
+  ban: 'Your account has been banned',
+  post_removed: 'Your post was removed',
 };
+const NOTIF_ICONS = { like: '❤️', reply: '💬', follow: '👤', repost: '🔁', ban: '🚫', post_removed: '🗑️' };
 
 export default function Notifications() {
   const [notifs, setNotifs] = useState([]);
@@ -49,6 +47,11 @@ export default function Notifications() {
                 <div className="notif-text">
                   <strong>{n.actor_name}</strong> {NOTIF_TEXT[n.type] || 'interacted with you'}
                 </div>
+                {n.message && (
+                  <div className="notif-message" style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4, background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: 4 }}>
+                    {n.message}
+                  </div>
+                )}
                 <div className="notif-time">
                   {formatDistanceToNow(n.created_at)}
                 </div>

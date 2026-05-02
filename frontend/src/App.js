@@ -12,6 +12,8 @@ import Notifications from './pages/Notifications';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Settings from './pages/Settings';
+import Admin from './pages/Admin';
+import Support from './pages/Support';
 import './index.css';
 import './stories.css';
 
@@ -31,6 +33,13 @@ function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="spinner" /></div>;
   if (!user) return <Navigate to="/login" />;
+  return children;
+}
+
+function AdminRoute({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="spinner" /></div>;
+  if (!user || user.role !== 'admin') return <Navigate to="/home" />;
   return children;
 }
 
@@ -90,6 +99,18 @@ function AppRoutes() {
         </ProtectedRoute>
       } />
 
+      <Route path="/admin" element={
+        <AdminRoute>
+          <Layout><Admin /></Layout>
+        </AdminRoute>
+      } />
+
+      <Route path="/support" element={
+        <ProtectedRoute>
+          <Layout><Support /></Layout>
+        </ProtectedRoute>
+      } />
+
       <Route path="/" element={<Navigate to={user ? "/home" : "/login"} />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
@@ -105,10 +126,19 @@ export default function App() {
     };
 
     const handleKeyDown = (e) => {
+      // PrintScreen detection
       if (e.key === 'PrintScreen') {
         document.body.classList.add('blurred-screen');
-        setTimeout(() => document.body.classList.remove('blurred-screen'), 1000);
+        setTimeout(() => document.body.classList.remove('blurred-screen'), 2000);
       }
+      
+      // Common screenshot shortcuts
+      // Win + Shift + S or Cmd + Shift + 4/3
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 's' || e.key === 'S' || e.key === '4' || e.key === '3')) {
+        document.body.classList.add('blurred-screen');
+        setTimeout(() => document.body.classList.remove('blurred-screen'), 3000);
+      }
+
       if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
         e.preventDefault();
       }
@@ -116,17 +146,23 @@ export default function App() {
 
     const handleBlur = () => document.body.classList.add('blurred-screen');
     const handleFocus = () => document.body.classList.remove('blurred-screen');
+    const handleVisibilityChange = () => {
+      if (document.hidden) document.body.classList.add('blurred-screen');
+      else document.body.classList.remove('blurred-screen');
+    };
 
     document.addEventListener('contextmenu', handleContext);
     document.addEventListener('keydown', handleKeyDown);
     window.addEventListener('blur', handleBlur);
     window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       document.removeEventListener('contextmenu', handleContext);
       document.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('blur', handleBlur);
       window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 

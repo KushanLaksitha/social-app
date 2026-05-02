@@ -54,6 +54,19 @@ export default function PostCard({ post: initialPost, onDelete, showThread = fal
     onDelete?.(post.id);
   };
 
+  const handleReport = async (e) => {
+    e.stopPropagation();
+    if (!user) return navigate('/login');
+    const reason = prompt('Why are you reporting this post?');
+    if (!reason) return;
+    try {
+      await api.post('/admin/report', { post_id: post.id, reason });
+      alert('Report submitted. Thank you for keeping our community safe!');
+    } catch (error) {
+      alert('Failed to submit report.');
+    }
+  };
+
   const goToPost = () => navigate(`/post/${post.id}`);
   const goToProfile = (e, username) => { e.stopPropagation(); navigate(`/profile/${username}`); };
 
@@ -101,8 +114,10 @@ export default function PostCard({ post: initialPost, onDelete, showThread = fal
               </span>
               {timeAgo}
             </span>
-            {user?.id === post.user_id && (
-              <button onClick={handleDelete} style={{ color: 'var(--red)', fontSize: 14, padding: '4px 8px', borderRadius: 6, marginLeft: 4 }}>🗑</button>
+            {user?.id === post.user_id ? (
+              <button onClick={handleDelete} title="Delete Post" style={{ color: 'var(--red)', fontSize: 14, padding: '4px 8px', borderRadius: 6, marginLeft: 4 }}>🗑</button>
+            ) : (
+              <button onClick={handleReport} title="Report Post" style={{ color: 'var(--text3)', fontSize: 14, padding: '4px 8px', borderRadius: 6, marginLeft: 4 }}>🚩</button>
             )}
           </div>
 

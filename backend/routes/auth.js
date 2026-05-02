@@ -56,6 +56,7 @@ router.get('/me', auth, (req, res) => {
 });
 
 const path = require('path');
+const fs = require('fs');
 const { saveEncrypted } = require('../utils/encryption');
 
 router.put('/profile', auth, (req, res) => {
@@ -68,7 +69,15 @@ router.put('/profile', auth, (req, res) => {
 
     const uploadDir = path.join(__dirname, '../uploads');
 
+    const oldUser = db.prepare('SELECT avatar, cover FROM users WHERE id=?').get(req.user.id);
+
     if (req.files?.['avatar']) {
+      // Delete old avatar if it's a file
+      if (oldUser.avatar && oldUser.avatar.startsWith('/api/media/')) {
+        const oldFile = path.join(uploadDir, oldUser.avatar.split('/').pop());
+        if (fs.existsSync(oldFile)) { try { fs.unlinkSync(oldFile); } catch(e){} }
+      }
+
       const file = req.files['avatar'][0];
       const encFilename = `img-${uuidv4()}.enc`;
       saveEncrypted(file.buffer, path.join(uploadDir, encFilename));
@@ -76,6 +85,12 @@ router.put('/profile', auth, (req, res) => {
       avatar = `/api/media/${encFilename}`;
     }
     if (req.files?.['cover']) {
+      // Delete old cover if it's a file
+      if (oldUser.cover && oldUser.cover.startsWith('/api/media/')) {
+        const oldFile = path.join(uploadDir, oldUser.cover.split('/').pop());
+        if (fs.existsSync(oldFile)) { try { fs.unlinkSync(oldFile); } catch(e){} }
+      }
+
       const file = req.files['cover'][0];
       const encFilename = `img-${uuidv4()}.enc`;
       saveEncrypted(file.buffer, path.join(uploadDir, encFilename));

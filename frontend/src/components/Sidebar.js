@@ -9,6 +9,7 @@ const NAV = [
   { to: '/explore', icon: '🔍', label: 'Explore' },
   { to: '/notifications', icon: '🔔', label: 'Notifications', badge: true },
   { to: '/messages', icon: '💬', label: 'Messages' },
+  { to: '/support', icon: '🆘', label: 'Support' },
 ];
 
 export default function Sidebar() {
@@ -42,6 +43,13 @@ export default function Sidebar() {
             {n.badge && notifCount > 0 && <span className="nav-badge">{notifCount > 99 ? '99+' : notifCount}</span>}
           </NavLink>
         ))}
+
+        {user && user.role === 'admin' && (
+          <NavLink to="/admin" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            <span className="nav-icon">🛡️</span>
+            <span className="nav-label">Admin Panel</span>
+          </NavLink>
+        )}
 
         {user && (
           <NavLink to={`/profile/${user.username}`} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
