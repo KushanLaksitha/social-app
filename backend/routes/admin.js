@@ -165,4 +165,62 @@ router.post('/requests/:id/resolve', adminAuth, (req, res) => {
   }
 });
 
+// --- Announcements ---
+router.post('/announcement', adminAuth, (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message) return res.status(400).json({ error: 'Message required' });
+
+    const users = db.prepare('SELECT id FROM users WHERE role != "admin"').all();
+    const insertNotif = db.prepare('INSERT INTO notifications (id, user_id, actor_id, type, message) VALUES (?, ?, ?, ?, ?)');
+    
+    users.forEach(u => {
+      insertNotif.run(uuidv4(), u.id, req.user.id, 'announcement', message);
+    });
+
+    res.json({ message: 'Announcement sent to all users' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Admin Post Review (Search & View Any User Posts) ---
+router.get('/user/:username/posts', adminAuth, (req, res) => {
+  try {
+    const user = db.prepare('SELECT id FROM users WHERE username = ?').get(req.params.username);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const posts = db.prepare('SELECT * FROM posts WHERE user_id = ? ORDER BY created_at DESC').all(user.id);
+    res.json(posts);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Direct Post Deletion by Admin ---
+router.post('/posts/:id/delete', adminAuth, (req, res) => {
+  try {
+    const postId = req.params.id;
+    const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(postId);
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+
+    // Delete physical files
+    const mediaUrls = [post.image, post.video].filter(Boolean);
+    mediaUrls.forEach(url => {
+      const filename = url.split('/').pop();
+      const filePath = path.join(__dirname, '../uploads', filename);
+      if (fs.existsSync(filePath)) {
+        try { fs.unlinkSync(filePath); } catch (e) { console.error('Failed to delete file:', filePath, e); }
+      }
+    });
+
+    // Delete post
+    db.prepare('DELETE FROM posts WHERE id = ?').run(postId);
+    
+    res.json({ message: 'Post deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
