@@ -148,7 +148,7 @@ export default function Profile() {
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
             {isMe ? (
               <button className="btn btn-outline" onClick={() => setEditMode(true)}>Edit Profile</button>
-            ) : (
+            ) : me?.role !== 'admin' && (
               <>
                 <button className="btn btn-outline" onClick={() => {
                   api.post(`/chat/conversations/${profile.id}`).then(r => navigate(`/messages/${r.data.id}`));

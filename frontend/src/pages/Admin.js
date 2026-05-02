@@ -29,17 +29,17 @@ const Admin = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [statsRes, usersRes, reportsRes, requestsRes] = await Promise.all([
+      const results = await Promise.allSettled([
         api.get('/admin/stats'),
         api.get('/admin/users'),
         api.get('/admin/reports'),
         api.get('/admin/requests')
       ]);
       
-      setStats(statsRes.data);
-      setUsers(usersRes.data);
-      setReports(reportsRes.data);
-      setRequests(requestsRes.data);
+      if (results[0].status === 'fulfilled') setStats(results[0].value.data);
+      if (results[1].status === 'fulfilled') setUsers(results[1].value.data);
+      if (results[2].status === 'fulfilled') setReports(results[2].value.data);
+      if (results[3].status === 'fulfilled') setRequests(results[3].value.data);
 
     } catch (error) {
       console.error('Error fetching admin data:', error);

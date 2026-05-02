@@ -58,9 +58,11 @@ export default function Sidebar() {
           </NavLink>
         )}
 
-        <button className="btn-post" style={{ marginTop: 12 }} onClick={() => setShowCompose(true)}>
-          + New Post
-        </button>
+        {user && user.role !== 'admin' && (
+          <button className="btn-post" style={{ marginTop: 12 }} onClick={() => setShowCompose(true)}>
+            + New Post
+          </button>
+        )}
 
         <div style={{ flex: 1 }} />
 
