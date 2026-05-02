@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 
 router.post('/', auth, (req, res) => {
+  if (req.user.role === 'admin') return res.status(403).json({ error: 'Admins cannot create highlights.' });
   const { title, cover_url, story_ids } = req.body;
   if (!title) return res.status(400).json({ error: 'Title required' });
   if (!story_ids || !story_ids.length) return res.status(400).json({ error: 'At least one story required' });
